@@ -1,0 +1,778 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scrum Kanban Board — IFB214TC CW1</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #ffffff; --bg2: #f5f4f0; --bg3: #eeedea;
+  --text: #1a1a18; --text2: #5f5e5a; --text3: #888780;
+  --border: rgba(0,0,0,0.12); --border2: rgba(0,0,0,0.22);
+  --radius: 8px; --radius-lg: 12px;
+  --blue: #378ADD; --blue-bg: #E6F1FB; --blue-text: #0C447C;
+  --teal: #1D9E75; --teal-bg: #E1F5EE; --teal-text: #085041;
+  --purple: #7F77DD; --purple-bg: #EEEDFE; --purple-text: #3C3489;
+  --amber: #BA7517; --amber-bg: #FAEEDA; --amber-text: #633806;
+  --coral: #D85A30; --coral-bg: #FAECE7; --coral-text: #712B13;
+  --green-bg: #EAF3DE; --green-text: #27500A;
+  --gray-bg: #F1EFE8; --gray-text: #444441;
+  --red: #D83030; --red-bg: #FAEBEB; --red-text: #711313;
+  --success: #1D9E75;
+  --shadow: 0 2px 8px rgba(0,0,0,0.10);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.14);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1e1e1c; --bg2: #2a2a28; --bg3: #333330;
+    --text: #e8e6df; --text2: #9c9a92; --text3: #6e6d67;
+    --border: rgba(255,255,255,0.1); --border2: rgba(255,255,255,0.2);
+    --blue-bg: #0c2a44; --blue-text: #85b7eb;
+    --teal-bg: #04342c; --teal-text: #5dcaa5;
+    --purple-bg: #26215c; --purple-text: #afa9ec;
+    --amber-bg: #412402; --amber-text: #ef9f27;
+    --coral-bg: #4a1b0c; --coral-text: #f0997b;
+    --green-bg: #173404; --green-text: #97c459;
+    --gray-bg: #2c2c2a; --gray-text: #b4b2a9;
+    --red-bg: #3a0f0f; --red-text: #e88080;
+  }
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg3); color: var(--text); font-size: 14px; line-height: 1.5; min-height: 100vh; }
+.page { max-width: 1200px; margin: 0 auto; padding: 24px 16px 60px; }
+.page-header { margin-bottom: 20px; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.page-title { font-size: 20px; font-weight: 600; }
+.page-sub { font-size: 13px; color: var(--text2); margin-top: 3px; }
+.header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { padding: 7px 14px; font-size: 13px; border-radius: var(--radius); border: 0.5px solid var(--border2); cursor: pointer; font-family: inherit; transition: all .15s; background: var(--bg); color: var(--text2); }
+.btn:hover { background: var(--bg2); color: var(--text); }
+.btn-primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+.btn-primary:hover { filter: brightness(1.1); }
+.btn-danger { background: var(--red-bg); color: var(--red-text); border-color: transparent; }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.stat-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 20px; }
+.stat-card { background: var(--bg2); border-radius: var(--radius); padding: 12px 14px; cursor: default; }
+.stat-label { font-size: 11px; color: var(--text2); margin-bottom: 3px; }
+.stat-val { font-size: 24px; font-weight: 600; }
+.stat-val.blue { color: var(--blue); } .stat-val.teal { color: var(--teal); }
+.stat-val.amber { color: var(--amber); } .stat-val.purple { color: var(--purple); }
+.pb-row { margin-bottom: 20px; background: var(--bg); border-radius: var(--radius-lg); padding: 14px 16px; border: 0.5px solid var(--border); }
+.pb-meta { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text2); margin-bottom: 8px; }
+.pb-label { font-weight: 500; font-size: 13px; color: var(--text); }
+.pb-track { height: 8px; background: var(--bg2); border-radius: 4px; overflow: hidden; }
+.pb-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--blue), var(--teal)); transition: width .4s ease; }
+.tab-row { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 18px; }
+.tab-btn { padding: 7px 14px; font-size: 13px; border-radius: var(--radius); border: 0.5px solid var(--border2); cursor: pointer; background: transparent; color: var(--text2); font-family: inherit; transition: all .15s; }
+.tab-btn:hover { background: var(--bg2); color: var(--text); }
+.tab-btn.active { background: var(--blue-bg); color: var(--blue-text); border-color: var(--blue); font-weight: 500; }
+.section { display: none; } .section.visible { display: block; }
+.filter-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; background: var(--bg); border-radius: var(--radius-lg); padding: 10px 14px; border: 0.5px solid var(--border); }
+.filter-label { font-size: 12px; color: var(--text2); white-space: nowrap; }
+.filter-sep { width: 1px; height: 16px; background: var(--border2); }
+.filter-btn { padding: 3px 11px; font-size: 12px; border-radius: 20px; border: 0.5px solid var(--border2); cursor: pointer; background: transparent; color: var(--text2); font-family: inherit; transition: all .15s; }
+.filter-btn:hover { background: var(--bg2); }
+.filter-btn.active { background: var(--blue-bg); color: var(--blue-text); border-color: var(--blue); }
+.filter-search { flex: 1; min-width: 140px; padding: 4px 10px; font-size: 12px; border: 0.5px solid var(--border2); border-radius: 20px; background: var(--bg2); color: var(--text); font-family: inherit; outline: none; }
+.filter-search:focus { border-color: var(--blue); background: var(--bg); }
+.kanban-board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; align-items: start; }
+.kb-col { background: var(--bg2); border-radius: var(--radius-lg); padding: 12px; min-height: 300px; transition: background .15s; border: 2px solid transparent; }
+.kb-col.drag-over { background: var(--blue-bg); border-color: var(--blue); }
+.kb-col-head { margin-bottom: 12px; }
+.kb-col-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.kb-col-name { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .05em; }
+.kb-count { background: var(--bg); border: 0.5px solid var(--border); border-radius: 20px; font-size: 11px; padding: 1px 8px; font-weight: 500; }
+.kb-col-pts { font-size: 11px; color: var(--text3); }
+.kb-add-btn { width: 100%; padding: 6px; font-size: 12px; border-radius: var(--radius); border: 1px dashed var(--border2); cursor: pointer; background: transparent; color: var(--text3); font-family: inherit; transition: all .15s; text-align: center; margin-top: 8px; }
+.kb-add-btn:hover { background: var(--bg); color: var(--text2); border-style: solid; }
+.kb-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 10px 11px; margin-bottom: 8px; cursor: grab; transition: box-shadow .15s, border-color .15s, transform .1s; user-select: none; position: relative; }
+.kb-card:hover { box-shadow: var(--shadow); border-color: var(--border2); }
+.kb-card.dragging { opacity: 0.4; cursor: grabbing; transform: rotate(2deg); box-shadow: var(--shadow-lg); }
+.kb-card-priority { height: 3px; border-radius: 2px; margin-bottom: 7px; }
+.pri-high { background: var(--red); } .pri-med { background: var(--amber); } .pri-low { background: var(--teal); }
+.kb-card-title { font-size: 13px; font-weight: 500; margin-bottom: 4px; line-height: 1.4; }
+.kb-card-sub { font-size: 11px; color: var(--text2); line-height: 1.4; margin-bottom: 6px; }
+.kb-card-foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px; }
+.kb-tag { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+.kbt-t1 { background: var(--purple-bg); color: var(--purple-text); }
+.kbt-t2 { background: var(--teal-bg); color: var(--teal-text); }
+.kbt-t3 { background: var(--blue-bg); color: var(--blue-text); }
+.kbt-t4 { background: var(--amber-bg); color: var(--amber-text); }
+.kbt-t5 { background: var(--coral-bg); color: var(--coral-text); }
+.kbt-b  { background: var(--green-bg); color: var(--green-text); }
+.kb-card-meta { display: flex; align-items: center; gap: 6px; }
+.kb-pts { font-size: 10px; background: var(--bg2); border-radius: 4px; padding: 1px 6px; color: var(--text2); font-weight: 500; }
+.kb-assignee { font-size: 10px; color: var(--text3); }
+.kb-sprint-badge { font-size: 10px; color: var(--text3); }
+.kb-card-actions { display: flex; gap: 4px; opacity: 0; transition: opacity .15s; position: absolute; top: 8px; right: 8px; }
+.kb-card:hover .kb-card-actions { opacity: 1; }
+.kb-action-btn { width: 22px; height: 22px; border-radius: 4px; border: 0.5px solid var(--border); background: var(--bg2); cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: center; color: var(--text2); transition: all .12s; }
+.kb-action-btn:hover { background: var(--bg3); color: var(--text); }
+.kb-action-btn.del:hover { background: var(--red-bg); color: var(--red-text); border-color: transparent; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 16px; opacity: 0; pointer-events: none; transition: opacity .2s; }
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal { background: var(--bg); border-radius: var(--radius-lg); padding: 24px; width: 100%; max-width: 500px; box-shadow: var(--shadow-lg); transform: translateY(12px); transition: transform .2s; max-height: 90vh; overflow-y: auto; }
+.modal-overlay.open .modal { transform: translateY(0); }
+.modal-title { font-size: 16px; font-weight: 600; margin-bottom: 18px; }
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 12px; color: var(--text2); margin-bottom: 5px; display: block; font-weight: 500; }
+.form-input, .form-select, .form-textarea { width: 100%; padding: 8px 10px; font-size: 13px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg2); color: var(--text); font-family: inherit; outline: none; transition: border-color .15s; }
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--blue); background: var(--bg); }
+.form-textarea { min-height: 70px; resize: vertical; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+.card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 12px; }
+.card h3 { font-size: 11px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 10px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 8px 10px; font-size: 11px; font-weight: 500; color: var(--text2); border-bottom: 0.5px solid var(--border); text-transform: uppercase; letter-spacing: .04em; }
+td { padding: 9px 10px; vertical-align: top; border-bottom: 0.5px solid var(--border); line-height: 1.5; }
+tr:last-child td { border-bottom: none; }
+.badge { display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 9px; border-radius: 20px; }
+.b-po { background: var(--purple-bg); color: var(--purple-text); } .b-sm { background: var(--teal-bg); color: var(--teal-text); }
+.b-de { background: var(--blue-bg); color: var(--blue-text); } .b-ml { background: var(--amber-bg); color: var(--amber-text); }
+.b-st { background: var(--coral-bg); color: var(--coral-text); } .b-done { background: var(--green-bg); color: var(--green-text); }
+.b-active { background: var(--amber-bg); color: var(--amber-text); } .b-plan { background: var(--gray-bg); color: var(--gray-text); }
+.b-went { background: var(--green-bg); color: var(--green-text); } .b-imp { background: var(--amber-bg); color: var(--amber-text); }
+.b-action { background: var(--blue-bg); color: var(--blue-text); }
+.info-bar { background: var(--bg2); border-radius: var(--radius); padding: 10px 14px; font-size: 12px; color: var(--text2); margin-top: 10px; }
+[contenteditable] { outline: none; border-radius: 3px; transition: background .15s; }
+[contenteditable]:hover { background: var(--bg2); }
+[contenteditable]:focus { background: var(--bg2); box-shadow: 0 0 0 2px var(--blue); }
+.standup-log { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 14px; margin-bottom: 10px; }
+.standup-entry { border-bottom: 0.5px solid var(--border); padding: 10px 0; font-size: 13px; }
+.standup-entry:last-child { border-bottom: none; }
+.standup-date { font-size: 11px; color: var(--text3); margin-bottom: 4px; }
+.standup-name { font-weight: 500; color: var(--text); margin-bottom: 4px; }
+.standup-section { color: var(--text2); font-size: 12px; line-height: 1.5; }
+.standup-section span { color: var(--text); }
+.blocker-tag { display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: 20px; background: var(--red-bg); color: var(--red-text); margin-left: 6px; }
+.dod-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.dod-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 14px; }
+.dod-head { font-size: 13px; font-weight: 500; margin-bottom: 10px; }
+.dod-item { display: flex; align-items: flex-start; gap: 8px; padding: 5px 4px; border-bottom: 0.5px solid var(--border); cursor: pointer; transition: background .1s; border-radius: 4px; }
+.dod-item:last-child { border-bottom: none; }
+.dod-item:hover { background: var(--bg2); }
+.dod-cb { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid var(--border2); flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; font-size: 10px; transition: all .15s; }
+.dod-item.checked .dod-cb { background: var(--teal); border-color: var(--teal); color: #fff; }
+.dod-item.checked .dod-text { color: var(--text3); text-decoration: line-through; }
+.dod-text { font-size: 12px; color: var(--text2); line-height: 1.4; }
+.dod-progress { font-size: 11px; color: var(--text3); margin-top: 8px; padding-top: 6px; border-top: 0.5px solid var(--border); }
+.vel-bar-wrap { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 12px; }
+.vel-bar-label { font-size: 11px; color: var(--text2); margin-bottom: 8px; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; }
+.vel-bar-area { height: 100px; display: flex; align-items: flex-end; gap: 3px; background: var(--bg2); border-radius: var(--radius); padding: 6px; }
+.vel-bar { border-radius: 4px 4px 0 0; transition: height .4s ease; min-width: 0; flex: 1; }
+.vel-bar.done-bar { background: var(--teal); } .vel-bar.rem-bar { background: var(--border2); }
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(60px); background: var(--text); color: var(--bg); padding: 10px 20px; border-radius: 20px; font-size: 13px; z-index: 2000; transition: transform .25s; pointer-events: none; white-space: nowrap; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+@media (max-width: 900px) { .kanban-board { grid-template-columns: 1fr 1fr; } .stat-row { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 600px) { .kanban-board { grid-template-columns: 1fr; } .stat-row { grid-template-columns: repeat(2, 1fr); } .dod-grid { grid-template-columns: 1fr; } .form-row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="page-header">
+  <div>
+    <div class="page-title">&#9776; Scrum Kanban Board &mdash; IFB214TC CW1</div>
+    <div class="page-sub">Sephora skincare review analysis &nbsp;&middot;&nbsp; Deadline: 18 May 2026, 17:00 &nbsp;&middot;&nbsp; <span style="color:var(--blue-text)">Drag cards to move &middot; Click to edit &middot; Auto-saved locally</span></div>
+  </div>
+  <div class="header-actions">
+    <button class="btn" onclick="exportData()">&#8681; Export</button>
+    <button class="btn" onclick="importData()">&#8679; Import</button>
+    <button class="btn" onclick="resetData()">&#8635; Reset</button>
+    <button class="btn btn-primary" onclick="openAddCard('backlog')">+ New Card</button>
+  </div>
+</div>
+
+<div class="stat-row">
+  <div class="stat-card"><div class="stat-label">Total Cards</div><div class="stat-val blue" id="stat-total">0</div></div>
+  <div class="stat-card"><div class="stat-label">In Progress</div><div class="stat-val amber" id="stat-progress">0</div></div>
+  <div class="stat-card"><div class="stat-label">In Review</div><div class="stat-val purple" id="stat-review">0</div></div>
+  <div class="stat-card"><div class="stat-label">Done</div><div class="stat-val teal" id="stat-done">0</div></div>
+  <div class="stat-card"><div class="stat-label">Completion</div><div class="stat-val" id="stat-pct">0%</div></div>
+</div>
+
+<div class="pb-row">
+  <div class="pb-meta"><span class="pb-label">Overall Project Progress</span><span id="pb-text" style="font-size:12px;color:var(--text2)">Calculating...</span></div>
+  <div class="pb-track"><div class="pb-fill" id="pb-fill" style="width:0%"></div></div>
+</div>
+
+<div class="tab-row">
+  <button class="tab-btn active" onclick="showTab('kanban',this)">&#9776; Kanban Board</button>
+  <button class="tab-btn" onclick="showTab('charter',this)">&#128196; Project Charter</button>
+  <button class="tab-btn" onclick="showTab('standup',this)">&#128172; Daily Stand-up</button>
+  <button class="tab-btn" onclick="showTab('dod',this)">&#10003; Definition of Done</button>
+  <button class="tab-btn" onclick="showTab('retro',this)">&#8635; Retrospective</button>
+  <button class="tab-btn" onclick="showTab('velocity',this)">&#128200; Velocity</button>
+</div><!-- KANBAN TAB -->
+<div id="sec-kanban" class="section visible">
+  <div class="filter-bar">
+    <span class="filter-label">Sprint:</span>
+    <button class="filter-btn active" data-group="sprint" data-val="all" onclick="setFilter('sprint','all',this)">All</button>
+    <button class="filter-btn" data-group="sprint" data-val="s1" onclick="setFilter('sprint','s1',this)">Sprint 1</button>
+    <button class="filter-btn" data-group="sprint" data-val="s2" onclick="setFilter('sprint','s2',this)">Sprint 2</button>
+    <button class="filter-btn" data-group="sprint" data-val="s3" onclick="setFilter('sprint','s3',this)">Sprint 3</button>
+    <button class="filter-btn" data-group="sprint" data-val="s4" onclick="setFilter('sprint','s4',this)">Sprint 4</button>
+    <div class="filter-sep"></div>
+    <span class="filter-label">Priority:</span>
+    <button class="filter-btn active" data-group="pri" data-val="all" onclick="setFilter('pri','all',this)">All</button>
+    <button class="filter-btn" data-group="pri" data-val="high" onclick="setFilter('pri','high',this)" style="color:var(--red-text)">&#9650; High</button>
+    <button class="filter-btn" data-group="pri" data-val="med" onclick="setFilter('pri','med',this)" style="color:var(--amber-text)">&#9679; Medium</button>
+    <button class="filter-btn" data-group="pri" data-val="low" onclick="setFilter('pri','low',this)" style="color:var(--teal-text)">&#9660; Low</button>
+    <div class="filter-sep"></div>
+    <input class="filter-search" id="search-input" placeholder="Search cards by title, assignee..." oninput="renderBoard()" />
+  </div>
+  <div class="kanban-board">
+    <div class="kb-col" id="col-backlog" ondragover="onDragOver(event)" ondrop="onDrop(event,'backlog')" ondragleave="onDragLeave(event)">
+      <div class="kb-col-head">
+        <div class="kb-col-title"><span class="kb-col-name">&#128229; Backlog</span><span class="kb-count" id="cnt-backlog">0</span></div>
+        <div class="kb-col-pts" id="pts-backlog"></div>
+      </div>
+      <div id="cards-backlog"></div>
+      <button class="kb-add-btn" onclick="openAddCard('backlog')">+ Add Card</button>
+    </div>
+    <div class="kb-col" id="col-progress" ondragover="onDragOver(event)" ondrop="onDrop(event,'progress')" ondragleave="onDragLeave(event)">
+      <div class="kb-col-head">
+        <div class="kb-col-title"><span class="kb-col-name">&#9881; In Progress</span><span class="kb-count" id="cnt-progress">0</span></div>
+        <div class="kb-col-pts" id="pts-progress"></div>
+      </div>
+      <div id="cards-progress"></div>
+      <button class="kb-add-btn" onclick="openAddCard('progress')">+ Add Card</button>
+    </div>
+    <div class="kb-col" id="col-review" ondragover="onDragOver(event)" ondrop="onDrop(event,'review')" ondragleave="onDragLeave(event)">
+      <div class="kb-col-head">
+        <div class="kb-col-title"><span class="kb-col-name">&#128269; In Review</span><span class="kb-count" id="cnt-review">0</span></div>
+        <div class="kb-col-pts" id="pts-review"></div>
+      </div>
+      <div id="cards-review"></div>
+      <button class="kb-add-btn" onclick="openAddCard('review')">+ Add Card</button>
+    </div>
+    <div class="kb-col" id="col-done" ondragover="onDragOver(event)" ondrop="onDrop(event,'done')" ondragleave="onDragLeave(event)">
+      <div class="kb-col-head">
+        <div class="kb-col-title"><span class="kb-col-name">&#10003; Done</span><span class="kb-count" id="cnt-done">0</span></div>
+        <div class="kb-col-pts" id="pts-done"></div>
+      </div>
+      <div id="cards-done"></div>
+      <button class="kb-add-btn" onclick="openAddCard('done')">+ Add Card</button>
+    </div>
+  </div>
+  <div style="font-size:11px;color:var(--text3);text-align:right;margin-top:6px">
+    Drag cards between columns &middot; Hover a card for action buttons &middot; All changes auto-saved to browser storage
+  </div>
+</div>
+
+<!-- CHARTER TAB -->
+<div id="sec-charter" class="section">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+    <div class="card"><h3>Project Objective</h3><p contenteditable="true">Deliver brand-level consumer insights from Sephora skincare reviews to support portfolio decisions — covering health diagnostics, needs discovery, driver modelling, and strategic prioritisation.</p></div>
+    <div class="card"><h3>Primary KPI</h3><p contenteditable="true"><strong>is_recommended</strong> (binary advocacy measure, Option A). Secondary KPI: net helpfulness score (pos_feedback - neg_feedback). All final recommendations anchored to primary KPI.</p></div>
+    <div class="card"><h3>Scope</h3><p contenteditable="true">3 brands (1 focal + 2 competitors, &ge;500 reviews each). Top 5 products per brand. Up to 2,000 reviews per brand, stratified by submission_time. Final dataset: ~3,000&ndash;6,000 reviews.</p></div>
+    <div class="card"><h3>Submission</h3><p contenteditable="true">One ZIP per team: Report.pdf + /Code (Python scripts) + /Data (cleaned dataset). Submitted via LMO by <strong>5:00 PM, 18 May 2026</strong>.</p></div>
+  </div>
+  <div class="card">
+    <h3 style="margin-bottom:12px">Scrum Roles &amp; Responsibilities</h3>
+    <table>
+      <thead><tr><th>Role</th><th>Member</th><th>Key Responsibilities</th><th>Evidence Artefact</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge b-po">Product Owner</span></td><td contenteditable="true" style="color:var(--text2)">Member A</td><td contenteditable="true">Owns client brief; validates deliverables; accepts sprint outputs at Sprint Reviews</td><td contenteditable="true" style="font-size:11px;color:var(--text2)">Sprint Review sign-off log</td></tr>
+        <tr><td><span class="badge b-sm">Scrum Master</span></td><td contenteditable="true" style="color:var(--text2)">Member B</td><td contenteditable="true">Runs all ceremonies; manages blockers; maintains task board; ensures DoD compliance</td><td contenteditable="true" style="font-size:11px;color:var(--text2)">Stand-up logs; board screenshots</td></tr>
+        <tr><td><span class="badge b-de">Data Engineer</span></td><td contenteditable="true" style="color:var(--text2)">Member C</td><td contenteditable="true">Data cleaning, deduplication, KPI imputation, time standardisation, price outlier treatment, bias discussion</td><td contenteditable="true" style="font-size:11px;color:var(--text2)">Cleaning script; missingness table</td></tr>
+        <tr><td><span class="badge b-ml">Modelling Lead</span></td><td contenteditable="true" style="color:var(--text2)">Member D</td><td contenteditable="true">LDA/NMF or SBERT topic mining; logistic regression / tree model + SHAP; train/test evaluation; robustness check</td><td contenteditable="true" style="font-size:11px;color:var(--text2)">Model notebook; SHAP plots</td></tr>
+        <tr><td><span class="badge b-st">Storytelling</span></td><td contenteditable="true" style="color:var(--text2)">Member E/F</td><td contenteditable="true">Charts, action priority matrix, report writing, Harvard referencing, executive narrative</td><td contenteditable="true" style="font-size:11px;color:var(--text2)">Report.pdf; figures folder</td></tr>
+      </tbody>
+    </table>
+    <div style="font-size:10px;color:var(--text3);margin-top:8px;font-style:italic">&#9998; Click any cell to edit directly</div>
+  </div>
+  <div class="info-bar">&#9432; Roles may be combined for groups of five. All responsibilities must remain explicit and evidenced by artefacts. This charter must be recorded before Sprint 1 begins.</div>
+</div>
+
+<!-- STANDUP TAB -->
+<div id="sec-standup" class="section">
+  <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
+    <button class="btn btn-primary" onclick="openAddStandup()">+ Add Stand-up Entry</button>
+    <span style="font-size:12px;color:var(--text2)">Async (post by 09:30 daily) or synchronous (max 15 min)</span>
+  </div>
+  <div id="standup-list"></div>
+  <div class="info-bar">&#9432; Stand-up screenshots and logs must be saved as artefacts (Appendix). They directly evidence the Adaptability and Communication rubric criteria.</div>
+</div>
+
+<!-- DOD TAB -->
+<div id="sec-dod" class="section">
+  <div style="margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <span style="font-size:13px;font-weight:500">Definition of Done (DoD) &mdash; Interactive Checklist</span>
+    <span id="dod-overall" style="font-size:12px;color:var(--text2)"></span>
+  </div>
+  <div class="dod-grid" id="dod-grid"></div>
+  <div style="font-size:10px;color:var(--text3);font-style:italic">&#9998; Click any item to toggle complete / incomplete &middot; Progress tracked automatically</div>
+</div>
+
+<!-- RETRO TAB -->
+<div id="sec-retro" class="section">
+  <div class="card">
+    <table>
+      <thead><tr><th>Sprint</th><th>Category</th><th>Observation</th><th>Improvement Action</th><th></th></tr></thead>
+      <tbody id="retro-body">
+        <tr><td style="color:var(--text2)">Sprint 1</td><td><span class="badge b-went">Went Well</span></td><td contenteditable="true">Brand filtering logic was reusable across Tasks 1 and 2, reducing duplicated effort</td><td contenteditable="true">Extract to shared utility function for Sprint 2+</td><td><button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">Remove</button></td></tr>
+        <tr><td style="color:var(--text2)">Sprint 1</td><td><span class="badge b-imp">Improve</span></td><td contenteditable="true">Inconsistent notebook naming caused confusion during Sprint Review demo</td><td contenteditable="true">Standardise naming: task_N_member.ipynb</td><td><button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">Remove</button></td></tr>
+        <tr><td style="color:var(--text2)">Sprint 1</td><td><span class="badge b-action">Action</span></td><td contenteditable="true">Missing-value treatment differed between members</td><td contenteditable="true">Agreed single rule: median for ordinal, mode for binary; documented in cleaning script header</td><td><button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">Remove</button></td></tr>
+        <tr><td style="color:var(--text2)">Sprint 2</td><td><span class="badge b-went">Went Well</span></td><td contenteditable="true">SBERT embeddings clustered cleanly; themes aligned with domain expectations</td><td contenteditable="true">Retain SBERT pipeline as primary method for Task 4 features</td><td><button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">Remove</button></td></tr>
+        <tr><td style="color:var(--text2)">Sprint 2</td><td><span class="badge b-imp">Improve</span></td><td contenteditable="true">Manual review check not completed before Sprint Review; PO could not accept Task 3</td><td contenteditable="true">Schedule human validation as a blocking task in Sprint 3 planning</td><td><button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">Remove</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+    <button class="btn" onclick="addRetroRow('went')">+ Went Well</button>
+    <button class="btn" onclick="addRetroRow('imp')">+ Improve</button>
+    <button class="btn" onclick="addRetroRow('action')">+ Action Item</button>
+  </div>
+  <div class="info-bar" style="margin-top:10px">&#9432; Update this table after each sprint. The retrospective log is direct evidence of Adaptability and process improvement rubric criteria.</div>
+</div>
+
+<!-- VELOCITY TAB -->
+<div id="sec-velocity" class="section">
+  <div class="card" style="margin-bottom:10px">
+    <h3 style="margin-bottom:14px">Sprint Velocity / Story Point Completion</h3>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px" id="velocity-grid"></div>
+    <div style="display:flex;gap:16px;margin-top:12px;font-size:12px;color:var(--text2)">
+      <span><span style="display:inline-block;width:10px;height:10px;background:var(--teal);border-radius:2px;margin-right:4px"></span>Completed pts</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:var(--border2);border-radius:2px;margin-right:4px"></span>Remaining pts</span>
+    </div>
+  </div>
+  <div class="card">
+    <h3 style="margin-bottom:12px">Sprint Review Outcomes</h3>
+    <table>
+      <thead><tr><th>Sprint</th><th>Deliverable Reviewed</th><th>PO Decision</th><th>Follow-up Action</th></tr></thead>
+      <tbody>
+        <tr><td style="color:var(--text2)">Sprint 1</td><td contenteditable="true">Cleaned dataset + brand health charts</td><td><span class="badge b-went">Accepted</span></td><td contenteditable="true">Standardise chart colour palette in Sprint 2</td></tr>
+        <tr><td style="color:var(--text2)">Sprint 2</td><td contenteditable="true">Coding frame + theme prevalence plot</td><td><span class="badge b-imp">Pending</span></td><td contenteditable="true">Manual 50-review agreement check required before acceptance</td></tr>
+        <tr><td style="color:var(--text2)">Sprint 3</td><td contenteditable="true">SHAP driver plot + model metrics</td><td><span class="badge b-plan">Upcoming</span></td><td contenteditable="true">&mdash;</td></tr>
+        <tr><td style="color:var(--text2)">Sprint 4</td><td contenteditable="true">Final report + ZIP package</td><td><span class="badge b-plan">Upcoming</span></td><td contenteditable="true">&mdash;</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</div><!-- end .page -->
+
+<!-- Card Modal -->
+<div class="modal-overlay" id="card-modal" onclick="if(event.target===this)closeModal('card-modal')">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">New Card</div>
+    <div class="form-group"><label class="form-label">Title *</label><input class="form-input" id="f-title" placeholder="Task title..." /></div>
+    <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="f-sub" placeholder="Brief description..."></textarea></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Sprint</label>
+        <select class="form-select" id="f-sprint"><option value="s1">Sprint 1</option><option value="s2" selected>Sprint 2</option><option value="s3">Sprint 3</option><option value="s4">Sprint 4</option></select></div>
+      <div class="form-group"><label class="form-label">Status</label>
+        <select class="form-select" id="f-status"><option value="backlog">Backlog</option><option value="progress">In Progress</option><option value="review">In Review</option><option value="done">Done</option></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Tag</label>
+        <select class="form-select" id="f-tag">
+          <option value="kbt-t1">Task 1 &middot; Data Prep</option><option value="kbt-t2">Task 2 &middot; Brand Health</option>
+          <option value="kbt-t3">Task 3 &middot; Needs Discovery</option><option value="kbt-t4">Task 4 &middot; Driver Model</option>
+          <option value="kbt-t5">Task 5 &middot; Strategy</option><option value="kbt-b">Bonus &middot; Web Scraping</option>
+        </select></div>
+      <div class="form-group"><label class="form-label">Priority</label>
+        <select class="form-select" id="f-pri"><option value="high">&#9650; High</option><option value="med" selected>&#9679; Medium</option><option value="low">&#9660; Low</option></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Story Points</label><input class="form-input" id="f-pts" type="number" min="1" max="21" value="3" /></div>
+      <div class="form-group"><label class="form-label">Assignee</label><input class="form-input" id="f-assignee" placeholder="Member A..." /></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('card-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCard()">Save Card</button>
+    </div>
+  </div>
+</div>
+
+<!-- Stand-up Modal -->
+<div class="modal-overlay" id="standup-modal" onclick="if(event.target===this)closeModal('standup-modal')">
+  <div class="modal">
+    <div class="modal-title">Add Stand-up Entry</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Member Name</label><input class="form-input" id="su-name" placeholder="Member A" /></div>
+      <div class="form-group"><label class="form-label">Sprint</label>
+        <select class="form-select" id="su-sprint"><option>Sprint 1</option><option selected>Sprint 2</option><option>Sprint 3</option><option>Sprint 4</option></select></div>
+    </div>
+    <div class="form-group"><label class="form-label">Yesterday I completed</label><textarea class="form-textarea" id="su-done" placeholder="Work completed..." style="min-height:52px"></textarea></div>
+    <div class="form-group"><label class="form-label">Today I will work on</label><textarea class="form-textarea" id="su-today" placeholder="Today's plan..." style="min-height:52px"></textarea></div>
+    <div class="form-group"><label class="form-label">Blockers (leave blank if none)</label><input class="form-input" id="su-block" placeholder="Describe blocker..." /></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('standup-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveStandup()">Save Entry</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div><script>
+var SK='ifb214_kb_v4',SSK='ifb214_su_v2',SDK='ifb214_dod_v2';
+var TAG_LABELS={'kbt-t1':'Task 1','kbt-t2':'Task 2','kbt-t3':'Task 3','kbt-t4':'Task 4','kbt-t5':'Task 5','kbt-b':'Bonus'};
+var COLS=['backlog','progress','review','done'];
+var COL_NAMES={backlog:'Backlog',progress:'In Progress',review:'In Review',done:'Done'};
+
+var DEFAULT_TASKS=[
+  {id:'t1a',title:'Handle duplicates & missing values',sub:'KPI imputation, deduplication',sprint:'s1',status:'done',tag:'kbt-t1',pri:'high',pts:5,assignee:'Member C'},
+  {id:'t1b',title:'Standardise submission_time',sub:'Parse datetime, detect outliers',sprint:'s1',status:'done',tag:'kbt-t1',pri:'high',pts:3,assignee:'Member C'},
+  {id:'t1c',title:'Bias & representativeness discussion',sub:'Self-selection, platform effects',sprint:'s1',status:'done',tag:'kbt-t1',pri:'med',pts:2,assignee:'Member E'},
+  {id:'t2a',title:'Brand KPI ranking charts',sub:'Rating + is_recommended by brand',sprint:'s1',status:'done',tag:'kbt-t2',pri:'high',pts:5,assignee:'Member E'},
+  {id:'t2b',title:'Skin-type segmentation cut',sub:'KPI split by skin_type',sprint:'s1',status:'done',tag:'kbt-t2',pri:'med',pts:3,assignee:'Member D'},
+  {id:'t3a',title:'Topic model (LDA/SBERT)',sub:'Theme extraction from review_text',sprint:'s2',status:'progress',tag:'kbt-t3',pri:'high',pts:8,assignee:'Member D'},
+  {id:'t3b',title:'Coding frame table',sub:'Definition + keywords per theme',sprint:'s2',status:'review',tag:'kbt-t3',pri:'med',pts:5,assignee:'Member D'},
+  {id:'t3c',title:'Manual validation (>=50 reviews)',sub:'Human-in-loop agreement check',sprint:'s2',status:'backlog',tag:'kbt-t3',pri:'high',pts:3,assignee:'Member B'},
+  {id:'t4a',title:'Feature engineering',sub:'Sentiment + theme + structured vars',sprint:'s3',status:'backlog',tag:'kbt-t4',pri:'high',pts:5,assignee:'Member D'},
+  {id:'t4b',title:'Logistic / tree model + SHAP',sub:'Train/test, >=2 metrics, driver plot',sprint:'s3',status:'backlog',tag:'kbt-t4',pri:'high',pts:8,assignee:'Member D'},
+  {id:'t4c',title:'Robustness check',sub:'Sensitivity analysis on features',sprint:'s3',status:'backlog',tag:'kbt-t4',pri:'med',pts:3,assignee:'Member D'},
+  {id:'t5a',title:'Action priority matrix',sub:'Impact x effort, evidence-linked',sprint:'s4',status:'backlog',tag:'kbt-t5',pri:'med',pts:5,assignee:'Member E'},
+  {id:'t5b',title:'6-10 strategic recommendations',sub:'Product / messaging / merchandising',sprint:'s4',status:'backlog',tag:'kbt-t5',pri:'med',pts:5,assignee:'Member E'},
+  {id:'tb',title:'Ethical web scraping (bonus)',sub:'No-login scraping, polite rate limit',sprint:'s4',status:'backlog',tag:'kbt-b',pri:'low',pts:5,assignee:'Member C'}
+];
+
+var DEFAULT_STANDUPS=[
+  {id:'su1',date:'2026-05-12',sprint:'Sprint 1',name:'Member A',done:'Completed brand data filtering logic',today:'Start brand KPI chart creation',blocker:''},
+  {id:'su2',date:'2026-05-13',sprint:'Sprint 1',name:'Member C',done:'Deduplication and KPI imputation done',today:'Handle submission_time standardisation',blocker:'price_usd field has 300+ outliers pending treatment'},
+  {id:'su3',date:'2026-05-15',sprint:'Sprint 2',name:'Member D',done:'SBERT embeddings complete, testing clusters',today:'Finalise coding frame, begin manual validation',blocker:''}
+];
+
+var DEFAULT_DOD=[
+  {id:'dd1',head:'Data Preparation (Task 1)',color:'var(--blue)',items:[
+    {id:'d1a',text:'No duplicate reviews remain in dataset',checked:true},
+    {id:'d1b',text:'Missing KPI values handled and documented',checked:true},
+    {id:'d1c',text:'submission_time parsed to datetime format',checked:true},
+    {id:'d1d',text:'price_usd outliers detected and treated',checked:true},
+    {id:'d1e',text:'Bias / representativeness section drafted',checked:false},
+    {id:'d1f',text:'Cleaning script reproducible end-to-end',checked:false}]},
+  {id:'dd2',head:'Brand Health (Task 2)',color:'var(--teal)',items:[
+    {id:'d2a',text:'KPI shown for all 3 brands + top 5 products',checked:true},
+    {id:'d2b',text:'At least one skin_type segmentation cut included',checked:true},
+    {id:'d2c',text:'Engagement signals (helpfulness) discussed',checked:false},
+    {id:'d2d',text:'Uncertainty noted where sample n is small',checked:false},
+    {id:'d2e',text:'Charts labelled, axes titled, PO accepted',checked:true}]},
+  {id:'dd3',head:'Needs Discovery (Task 3)',color:'var(--purple)',items:[
+    {id:'d3a',text:'Primary method chosen (LDA/NMF or SBERT+clustering)',checked:true},
+    {id:'d3b',text:'Coding frame table: definition + keywords per theme',checked:true},
+    {id:'d3c',text:'Theme prevalence shown by brand and skin_type',checked:false},
+    {id:'d3d',text:'>=50 reviews manually checked (human-in-loop)',checked:false},
+    {id:'d3e',text:'Agreement rate and error analysis reported',checked:false}]},
+  {id:'dd4',head:'Driver Modelling (Task 4)',color:'var(--amber)',items:[
+    {id:'d4a',text:'At least one interpretable model fitted',checked:false},
+    {id:'d4b',text:'Feature set: text signal + structured variable',checked:false},
+    {id:'d4c',text:'Train/test split or CV, >=2 metrics reported',checked:false},
+    {id:'d4d',text:'SHAP / permutation importance plotted',checked:false},
+    {id:'d4e',text:'Drivers translated into marketing language',checked:false},
+    {id:'d4f',text:'One robustness check documented',checked:false}]},
+  {id:'dd5',head:'Strategy (Task 5)',color:'var(--coral)',items:[
+    {id:'d5a',text:'Action priority matrix included',checked:false},
+    {id:'d5b',text:'6-10 specific actions, each linked to evidence',checked:false},
+    {id:'d5c',text:'Covers product fix + messaging + merchandising',checked:false},
+    {id:'d5d',text:'>=2 actionable segments proposed (min: skin_type)',checked:false},
+    {id:'d5e',text:'Limitations paragraph included',checked:false}]},
+  {id:'dd6',head:'Report & Submission',color:'var(--gray-text)',items:[
+    {id:'d6a',text:'Word count <=2,500 (exclusions applied)',checked:false},
+    {id:'d6b',text:'Harvard referencing throughout',checked:false},
+    {id:'d6c',text:'AI usage logged with prompts in appendix',checked:false},
+    {id:'d6d',text:'Appendix <=10 pages verified',checked:false},
+    {id:'d6e',text:'ZIP: Report.pdf + /Code + /Data verified',checked:false},
+    {id:'d6f',text:'Submitted via LMO before 5 PM 18 May 2026',checked:false}]}
+];
+
+var tasks,standups,dodData;
+var filter={sprint:'all',pri:'all'};
+var editingId=null,draggingId=null;
+
+function load(){
+  try{tasks=JSON.parse(localStorage.getItem(SK))||clone(DEFAULT_TASKS);}catch(e){tasks=clone(DEFAULT_TASKS);}
+  try{standups=JSON.parse(localStorage.getItem(SSK))||clone(DEFAULT_STANDUPS);}catch(e){standups=clone(DEFAULT_STANDUPS);}
+  try{dodData=JSON.parse(localStorage.getItem(SDK))||clone(DEFAULT_DOD);}catch(e){dodData=clone(DEFAULT_DOD);}
+}
+function save(){
+  localStorage.setItem(SK,JSON.stringify(tasks));
+  localStorage.setItem(SSK,JSON.stringify(standups));
+  localStorage.setItem(SDK,JSON.stringify(dodData));
+}
+function clone(o){return JSON.parse(JSON.stringify(o));}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function showTab(id,btn){
+  document.querySelectorAll('.section').forEach(function(s){s.classList.remove('visible');});
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('sec-'+id).classList.add('visible');
+  btn.classList.add('active');
+  if(id==='kanban')renderBoard();
+  else if(id==='standup')renderStandups();
+  else if(id==='dod')renderDoD();
+  else if(id==='velocity')renderVelocity();
+}
+
+function setFilter(type,val,btn){
+  filter[type]=val;
+  document.querySelectorAll('.filter-btn[data-group="'+type+'"]').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  renderBoard();
+}
+
+function filtered(){
+  var q=(document.getElementById('search-input')||{value:''}).value.toLowerCase().trim();
+  return tasks.filter(function(t){
+    if(filter.sprint!=='all'&&t.sprint!==filter.sprint)return false;
+    if(filter.pri!=='all'&&t.pri!==filter.pri)return false;
+    if(q&&!t.title.toLowerCase().includes(q)&&!(t.sub||'').toLowerCase().includes(q)&&!(t.assignee||'').toLowerCase().includes(q))return false;
+    return true;
+  });
+}
+
+function renderBoard(){
+  var f=filtered();
+  var by={backlog:[],progress:[],review:[],done:[]};
+  f.forEach(function(t){if(by[t.status])by[t.status].push(t);});
+  COLS.forEach(function(col){
+    var el=document.getElementById('cards-'+col);if(!el)return;
+    var pts=by[col].reduce(function(a,t){return a+(t.pts||0);},0);
+    document.getElementById('cnt-'+col).textContent=by[col].length;
+    document.getElementById('pts-'+col).textContent=pts?' '+pts+' pts':'';
+    el.innerHTML=by[col].map(cardHTML).join('');
+    el.querySelectorAll('.kb-card').forEach(function(c){
+      c.addEventListener('dragstart',function(e){onDragStart(e,c.dataset.id);});
+      c.addEventListener('dragend',onDragEnd);
+    });
+  });
+  updateStats();
+}
+
+function cardHTML(t){
+  var pc={high:'pri-high',med:'pri-med',low:'pri-low'}[t.pri||'med'];
+  return '<div class="kb-card" draggable="true" data-id="'+t.id+'" onclick="openEdit(\''+t.id+'\')">'
+    +'<div class="kb-card-priority '+pc+'"></div>'
+    +'<div class="kb-card-actions">'
+    +'<button class="kb-action-btn" onclick="event.stopPropagation();mv(\''+t.id+'\',-1)" title="Move left">&#8592;</button>'
+    +'<button class="kb-action-btn" onclick="event.stopPropagation();mv(\''+t.id+'\',1)" title="Move right">&#8594;</button>'
+    +'<button class="kb-action-btn del" onclick="event.stopPropagation();del(\''+t.id+'\')" title="Delete">&#10005;</button>'
+    +'</div>'
+    +'<div class="kb-card-title">'+esc(t.title)+'</div>'
+    +(t.sub?'<div class="kb-card-sub">'+esc(t.sub)+'</div>':'')
+    +'<div class="kb-card-foot">'
+    +'<span class="kb-tag '+t.tag+'">'+esc(TAG_LABELS[t.tag]||t.tag)+'</span>'
+    +'<div class="kb-card-meta">'
+    +'<span class="kb-pts">'+(t.pts||1)+'pt</span>'
+    +(t.assignee?'<span class="kb-assignee">'+esc(t.assignee)+'</span>':'')
+    +'<span class="kb-sprint-badge">'+t.sprint.toUpperCase()+'</span>'
+    +'</div></div></div>';
+}
+
+function updateStats(){
+  var d=tasks.filter(function(t){return t.status==='done';}).length;
+  var p=tasks.filter(function(t){return t.status==='progress';}).length;
+  var r=tasks.filter(function(t){return t.status==='review';}).length;
+  var pct=tasks.length?Math.round(d/tasks.length*100):0;
+  document.getElementById('stat-total').textContent=tasks.length;
+  document.getElementById('stat-progress').textContent=p;
+  document.getElementById('stat-review').textContent=r;
+  document.getElementById('stat-done').textContent=d;
+  document.getElementById('stat-pct').textContent=pct+'%';
+  document.getElementById('pb-fill').style.width=pct+'%';
+  document.getElementById('pb-text').textContent=d+' of '+tasks.length+' cards done ('+pct+'%)';
+}
+
+function onDragStart(e,id){
+  draggingId=id;e.dataTransfer.effectAllowed='move';
+  setTimeout(function(){var c=document.querySelector('.kb-card[data-id="'+id+'"]');if(c)c.classList.add('dragging');},0);
+}
+function onDragEnd(){
+  document.querySelectorAll('.kb-card').forEach(function(c){c.classList.remove('dragging');});
+  document.querySelectorAll('.kb-col').forEach(function(c){c.classList.remove('drag-over');});
+  draggingId=null;
+}
+function onDragOver(e){e.preventDefault();e.dataTransfer.dropEffect='move';e.currentTarget.classList.add('drag-over');}
+function onDragLeave(e){e.currentTarget.classList.remove('drag-over');}
+function onDrop(e,status){
+  e.preventDefault();e.currentTarget.classList.remove('drag-over');
+  if(!draggingId)return;
+  var t=tasks.find(function(x){return x.id===draggingId;});
+  if(t){t.status=status;save();renderBoard();toast('Moved to '+COL_NAMES[status]);}
+}
+function mv(id,dir){
+  var t=tasks.find(function(x){return x.id===id;});if(!t)return;
+  var i=COLS.indexOf(t.status),n=i+dir;
+  if(n<0||n>=COLS.length)return;
+  t.status=COLS[n];save();renderBoard();toast('Moved to '+COL_NAMES[t.status]);
+}
+function del(id){
+  if(!confirm('Delete this card?'))return;
+  tasks=tasks.filter(function(t){return t.id!==id;});
+  save();renderBoard();toast('Card deleted');
+}
+
+function openAddCard(col){
+  editingId=null;
+  document.getElementById('modal-title').textContent='New Card';
+  document.getElementById('f-title').value='';
+  document.getElementById('f-sub').value='';
+  document.getElementById('f-sprint').value='s2';
+  document.getElementById('f-status').value=col||'backlog';
+  document.getElementById('f-tag').value='kbt-t3';
+  document.getElementById('f-pri').value='med';
+  document.getElementById('f-pts').value='3';
+  document.getElementById('f-assignee').value='';
+  document.getElementById('card-modal').classList.add('open');
+  setTimeout(function(){document.getElementById('f-title').focus();},180);
+}
+function openEdit(id){
+  var t=tasks.find(function(x){return x.id===id;});if(!t)return;
+  editingId=id;
+  document.getElementById('modal-title').textContent='Edit Card';
+  document.getElementById('f-title').value=t.title;
+  document.getElementById('f-sub').value=t.sub||'';
+  document.getElementById('f-sprint').value=t.sprint;
+  document.getElementById('f-status').value=t.status;
+  document.getElementById('f-tag').value=t.tag;
+  document.getElementById('f-pri').value=t.pri||'med';
+  document.getElementById('f-pts').value=t.pts||3;
+  document.getElementById('f-assignee').value=t.assignee||'';
+  document.getElementById('card-modal').classList.add('open');
+}
+function saveCard(){
+  var title=document.getElementById('f-title').value.trim();
+  if(!title){document.getElementById('f-title').style.borderColor='var(--red)';document.getElementById('f-title').focus();return;}
+  document.getElementById('f-title').style.borderColor='';
+  var tag=document.getElementById('f-tag').value;
+  if(editingId){
+    var t=tasks.find(function(x){return x.id===editingId;});
+    if(t){t.title=title;t.sub=document.getElementById('f-sub').value.trim();t.sprint=document.getElementById('f-sprint').value;
+      t.status=document.getElementById('f-status').value;t.tag=tag;t.pri=document.getElementById('f-pri').value;
+      t.pts=parseInt(document.getElementById('f-pts').value)||3;t.assignee=document.getElementById('f-assignee').value.trim();}
+    toast('Card updated');
+  }else{
+    tasks.push({id:'c'+Date.now(),title:title,sub:document.getElementById('f-sub').value.trim(),
+      sprint:document.getElementById('f-sprint').value,status:document.getElementById('f-status').value,
+      tag:tag,pri:document.getElementById('f-pri').value,pts:parseInt(document.getElementById('f-pts').value)||3,
+      assignee:document.getElementById('f-assignee').value.trim()});
+    toast('Card added');
+  }
+  save();closeModal('card-modal');renderBoard();
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+function renderStandups(){
+  var el=document.getElementById('standup-list');if(!el)return;
+  if(!standups.length){el.innerHTML='<div class="info-bar">No stand-up entries yet. Click the button above to add one.</div>';return;}
+  el.innerHTML=standups.slice().reverse().map(function(s){
+    return '<div class="standup-log"><div class="standup-entry">'
+      +'<div class="standup-date">'+esc(s.date)+' &middot; '+esc(s.sprint)+'</div>'
+      +'<div class="standup-name">'+esc(s.name)+(s.blocker?'<span class="blocker-tag">&#9888; Blocker</span>':'')+'</div>'
+      +'<div class="standup-section">Yesterday: <span>'+esc(s.done)+'</span></div>'
+      +'<div class="standup-section">Today: <span>'+esc(s.today)+'</span></div>'
+      +(s.blocker?'<div class="standup-section" style="color:var(--red-text)">Blocker: <span>'+esc(s.blocker)+'</span></div>':'')
+      +'</div></div>';
+  }).join('');
+}
+function openAddStandup(){
+  document.getElementById('su-name').value='';
+  document.getElementById('su-done').value='';
+  document.getElementById('su-today').value='';
+  document.getElementById('su-block').value='';
+  document.getElementById('standup-modal').classList.add('open');
+  setTimeout(function(){document.getElementById('su-name').focus();},180);
+}
+function saveStandup(){
+  var name=document.getElementById('su-name').value.trim();
+  var done=document.getElementById('su-done').value.trim();
+  var today=document.getElementById('su-today').value.trim();
+  if(!name||!done||!today){toast('Please fill in name, yesterday, and today fields');return;}
+  standups.push({id:'su'+Date.now(),date:new Date().toISOString().slice(0,10),
+    sprint:document.getElementById('su-sprint').value,name:name,done:done,today:today,
+    blocker:document.getElementById('su-block').value.trim()});
+  save();closeModal('standup-modal');renderStandups();toast('Stand-up entry saved');
+}
+
+function renderDoD(){
+  var el=document.getElementById('dod-grid');if(!el)return;
+  var totalAll=0,doneAll=0;
+  el.innerHTML=dodData.map(function(sec){
+    var tot=sec.items.length,dn=sec.items.filter(function(i){return i.checked;}).length;
+    totalAll+=tot;doneAll+=dn;
+    return '<div class="dod-card"><div class="dod-head" style="color:'+sec.color+'">'+sec.head+'</div>'
+      +sec.items.map(function(item){
+        return '<div class="dod-item'+(item.checked?' checked':'')+'" onclick="toggleDod(\''+sec.id+'\',\''+item.id+'\')">'
+          +'<div class="dod-cb">'+(item.checked?'&#10003;':'')+'</div>'
+          +'<div class="dod-text">'+esc(item.text)+'</div></div>';
+      }).join('')
+      +'<div class="dod-progress">'+dn+' / '+tot+' done ('+Math.round(dn/tot*100)+'%)</div></div>';
+  }).join('');
+  var overall=document.getElementById('dod-overall');
+  if(overall)overall.textContent='Overall: '+doneAll+' / '+totalAll+' items complete ('+Math.round(doneAll/totalAll*100)+'%)';
+}
+function toggleDod(sid,iid){
+  var sec=dodData.find(function(s){return s.id===sid;});if(!sec)return;
+  var item=sec.items.find(function(i){return i.id===iid;});if(!item)return;
+  item.checked=!item.checked;save();renderDoD();
+}
+
+function renderVelocity(){
+  var el=document.getElementById('velocity-grid');if(!el)return;
+  el.innerHTML=['s1','s2','s3','s4'].map(function(sp,i){
+    var all=tasks.filter(function(t){return t.sprint===sp;});
+    var done=all.filter(function(t){return t.status==='done';});
+    var tp=all.reduce(function(a,t){return a+(t.pts||0);},0);
+    var dp=done.reduce(function(a,t){return a+(t.pts||0);},0);
+    var pct=tp?Math.round(dp/tp*100):0;
+    var dpH=tp?Math.round(dp/tp*80):0;
+    var rpH=tp?Math.round((tp-dp)/tp*80):0;
+    return '<div class="vel-bar-wrap">'
+      +'<div class="vel-bar-label">Sprint '+(i+1)+'</div>'
+      +'<div class="vel-bar-area">'
+      +'<div class="vel-bar done-bar" style="height:'+dpH+'px" title="Done: '+dp+' pts"></div>'
+      +'<div class="vel-bar rem-bar" style="height:'+rpH+'px" title="Remaining: '+(tp-dp)+' pts"></div>'
+      +'</div>'
+      +'<div style="font-size:11px;color:var(--text2);margin-top:6px">'+dp+' / '+tp+' pts &mdash; '+pct+'%</div>'
+      +'</div>';
+  }).join('');
+}
+
+function addRetroRow(type){
+  var tbody=document.getElementById('retro-body');
+  var badge=type==='went'?'<span class="badge b-went">Went Well</span>':type==='imp'?'<span class="badge b-imp">Improve</span>':'<span class="badge b-action">Action</span>';
+  var tr=document.createElement('tr');
+  tr.innerHTML='<td style="color:var(--text2)" contenteditable="true">Sprint &mdash;</td>'
+    +'<td>'+badge+'</td>'
+    +'<td contenteditable="true">Click to add observation...</td>'
+    +'<td contenteditable="true">Click to add action...</td>'
+    +'<td><button class="btn btn-danger btn-sm" onclick="this.closest(\'tr\').remove()">Remove</button></td>';
+  tbody.appendChild(tr);
+  tr.querySelectorAll('td[contenteditable]')[0].focus();
+}
+
+function exportData(){
+  var blob=new Blob([JSON.stringify({tasks:tasks,standups:standups,dod:dodData},null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='kanban_backup_'+new Date().toISOString().slice(0,10)+'.json';a.click();toast('JSON backup exported');
+}
+function importData(){
+  var inp=document.createElement('input');inp.type='file';inp.accept='.json';
+  inp.onchange=function(e){
+    var f=e.target.files[0];if(!f)return;
+    var r=new FileReader();
+    r.onload=function(ev){
+      try{var d=JSON.parse(ev.target.result);
+        if(d.tasks)tasks=d.tasks;if(d.standups)standups=d.standups;if(d.dod)dodData=d.dod;
+        save();renderBoard();toast('Import successful');
+      }catch(ex){toast('Invalid JSON file');}
+    };r.readAsText(f);
+  };inp.click();
+}
+function resetData(){
+  if(!confirm('Reset will clear all local changes and restore defaults. Confirm?'))return;
+  tasks=clone(DEFAULT_TASKS);standups=clone(DEFAULT_STANDUPS);dodData=clone(DEFAULT_DOD);
+  save();renderBoard();toast('Reset to default data');
+}
+
+var _tt;
+function toast(msg){
+  var el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');
+  clearTimeout(_tt);_tt=setTimeout(function(){el.classList.remove('show');},2400);
+}
+
+load();renderBoard();
+</script>
+</body>
+</html>
